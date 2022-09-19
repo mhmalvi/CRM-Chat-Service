@@ -14,7 +14,7 @@ let connection = mysql.createConnection({
   host: "localhost",
   user: "root",
   password: "",
-  database: "crm-conversation",
+  database: "crm-system",
 });
 
 connection.connect(function (err) {
@@ -39,7 +39,7 @@ io.on("connection", (socket) => {
 
   socket.on("send_message", (data) => {
     const sql = `INSERT INTO crm-conversation (sender_id, receiver_id, message, date_time, status, room) VALUES (${data.sender_id}, ${data.receiver_id}, ${data.message}, '', '0', ${data.room})`;
-    con.query(sql, function (err, result) {
+    connection.query(sql, function (err, result) {
       if (err) throw err;
       console.log("1 record inserted");
     });
