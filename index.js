@@ -5,8 +5,25 @@ const cors = require("cors");
 const { Server } = require("socket.io");
 require("dotenv").config();
 const mysql = require("mysql");
+const multer = require("multer");
 
 app.use(cors());
+
+app.use("/public/static", express.static("public"));
+
+// file upload destination
+var storage = multer.diskStorage({
+  destination: "./public",
+  filename: function (req, file, cb) {
+    console.log(file);
+    cb(null, `${Date.now()}_${file.originalname}`);
+  },
+});
+
+const upload = multer({
+  storage: storage,
+  limits: 10000000, //10mb
+});
 
 const server = http.createServer(app);
 
@@ -30,18 +47,14 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
-  console.log(`User Connected: ${socket.id}`);
-
-  socket.on("join_room", (data) => {
-    socket.join(data);
-    console.log(`User with ID: ${socket.id} joined room: ${data}`);
+  socket.on("join_room", (room) => {
+    socket.join(room);
   });
 
   socket.on("send_message", (data) => {
-    const sql = `INSERT INTO crm-conversation (sender_id, receiver_id, message, date_time, status, room) VALUES (${data.sender_id}, ${data.receiver_id}, ${data.message}, '', '0', ${data.room})`;
+    const sql = `INSERT INTO crm_conversation (sender_id, receiver_id, message, date_time, status, room) VALUES (${data.sender_id}, ${data.recever_id}, "${data.message}", "${data.date_time}", 0, ${data.room})`;
     connection.query(sql, function (err, result) {
       if (err) throw err;
-      console.log("1 record inserted");
     });
 
     socket.to(data.room).emit("receive_message", data);
@@ -52,10 +65,65 @@ io.on("connection", (socket) => {
   });
 });
 
+app.get("/get-message/:id", (req, res) => {
+  const roomId = parseInt(req.params.id);
+  const sql = `SELECT * FROM crm_conversation WHERE room=${roomId} ORDER BY id ASC`;
+  connection.query(sql, function (err, data) {
+    if (err) throw err;
+    res.json(data);
+  });
+});
+
+app.post("/message/uploadfile", upload.array("files"), (req, res) => {
+  const files = req.files;
+
+  if (Array.isArray(files) && files.length > 0) {
+    console.log(files);
+    for (let i = 0; i < files.length; i++) {
+      const sql = `INSERT INTO crm_conversation (sender_id, receiver_id, message, date_time, status, room) VALUES (${req.body?.sender_id}, ${req.body?.recever_id}, "${files[i]?.filename}", "${req.body?.date_time}", 0, ${req.body?.room})`;
+      connection.query(sql, function (err, result) {
+        if (err) throw err;
+      });
+    }
+    res.json(files);
+  } else {
+    throw new Error("File upload unsuccessful");
+  }
+});
+
+// app.post("/message/uploadfile", upload.array("file", 5), (req, res, next) => {
+//   console.log(req.file);
+//   console.log(req.file?.originalname + " file successfully uploaded !!");
+//   res.sendStatus(200);
+// });
+
+app.get("/delete-message/:id", (req, res) => {
+  const msgId = parseInt(req.params.id);
+  const deleteMessageSql = `DELETE FROM crm_conversation WHERE id=${msgId}`;
+  connection.query(deleteMessageSql, function (err, data) {
+    if (err) throw err;
+    res.json("Deleted");
+  });
+});
+
+// app.post("/upload", upload.single("image"), (req, res) => {
+//   if (!req.file) {
+//     console.log("No file upload");
+//   } else {
+//     console.log(req.file.filename);
+//     var imgsrc = "http://localhost:3000/images/" + req.file.filename;
+//     var insertData = "INSERT INTO users_file(file_src)VALUES(?)";
+//     connection.query(insertData, [imgsrc], (err, result) => {
+//       if (err) throw err;
+//       console.log("file uploaded");
+//     });
+//   }
+// });
+
 app.get("/", (req, res) => {
   res.json("Server is running");
 });
 
-server.listen(5000, () => {
-  console.log("Server is running");
+server.listen(5000 || process.env.PORT, () => {
+  console.log("Server is running ", process.env.PORT);
 });
