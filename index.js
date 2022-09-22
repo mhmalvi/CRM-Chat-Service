@@ -91,11 +91,52 @@ app.post("/message/uploadfile", upload.array("files"), (req, res) => {
   }
 });
 
-// app.post("/message/uploadfile", upload.array("file", 5), (req, res, next) => {
-//   console.log(req.file);
-//   console.log(req.file?.originalname + " file successfully uploaded !!");
-//   res.sendStatus(200);
-// });
+app.get("/messages/:user_id", (req, res) => {
+  console.log(req?.params?.user_id);
+
+  const allSendersSql = `SELECT sender_id FROM crm_conversation WHERE receiver_id=${req?.params?.user_id}`;
+  const allMessagesSql = `SELECT * FROM crm_conversation WHERE receiver_id=${req?.params?.user_id}`;
+
+  const messages = [];
+
+  // const groupByCategory = allMessagesSql.reduce((group, allSendersSql) => {
+  //   const { sender_id } = allSendersSql;
+  //   group[sender_id] = group[sender_id] ?? [];
+  //   group[sender_id].push(allSendersSql);
+  //   console.log(group);
+  //   return group;
+  // }, {});
+
+  console.log(allMessagesSql);
+
+  connection.query(allMessagesSql, function (err, result) {
+    if (err) console.log(err);
+    if (result?.length > 0) {
+      result.forEach((element) => {
+        messages.push(element);
+      });
+
+      console.log(messages);
+      res.json(result);
+    } else {
+      res.json("No conversation Yet");
+    }
+  });
+
+  connection.query(allSendersSql, function (err, result) {
+    if (err) console.log(err);
+    if (result?.length > 0) {
+      result.forEach((element) => {
+        messages.push(element);
+      });
+
+      console.log(messages);
+      res.json(result);
+    } else {
+      res.json("No conversation Yet");
+    }
+  });
+});
 
 app.get("/delete-message/:id", (req, res) => {
   const msgId = parseInt(req.params.id);
