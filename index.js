@@ -67,13 +67,24 @@ io.on("connection", (socket) => {
     connection.query(sql, function (err, result) {
       if (err) throw err;
     });
-
-    // const messagesSql = `SELECT * FROM crm_conversation WHERE receiver_id=${req?.params?.user_id}`;
-    // connection.query(messagesSql, function (err, result) {
-    //   if (err) throw err;
-    //   socket.to(data.room).emit("messages", result);
-    // });
   });
+
+  socket.on("delete_message", (msgId) => {
+    console.log(msgId);
+    // const deleteMessageSql = `DELETE FROM crm_conversation WHERE id=${msgId}`;
+    const deleteMessageSql = `UPDATE crm_conversation SET message="msg_dlt_by_user" WHERE id=${msgId}`;
+    connection.query(deleteMessageSql, function (err, data) {
+      if (err) throw err;
+    });
+
+    // socket.emit("receive_message", data);
+  });
+
+  // const messagesSql = `SELECT * FROM crm_conversation WHERE receiver_id=${req?.params?.user_id}`;
+  // connection.query(messagesSql, function (err, result) {
+  //   if (err) throw err;
+  //   socket.to(data.room).emit("messages", result);
+  // });
 
   socket.on("disconnect", () => {
     console.log("User Disconnected", socket.id);
