@@ -32,6 +32,7 @@ let connection = mysql.createConnection({
   user: "root",
   password: "",
   database: "crm-system",
+  multipleStatements: true,
 });
 
 connection.connect(function (err) {
@@ -52,12 +53,26 @@ io.on("connection", (socket) => {
   });
 
   socket.on("send_message", (data) => {
-    const sql = `INSERT INTO crm_conversation (sender_id, receiver_id, message, date_time, status, room) VALUES (${data.sender_id}, ${data.recever_id}, "${data.message}", "${data.date_time}", 0, ${data.room})`;
+    const sql = `INSERT INTO crm_conversation (sender_id, sender_name, receiver_id, receiver_name, message, date_time, status, room) VALUES (${data.sender_id}, "${data.sender_name}", ${data.recever_id}, "${data.recever_name}", "${data.message}", "${data.date_time}", 0, ${data.room})`;
     connection.query(sql, function (err, result) {
       if (err) throw err;
     });
 
     socket.to(data.room).emit("receive_message", data);
+  });
+
+  socket.on("read_message", (data) => {
+    console.log(data);
+    const sql = `UPDATE crm_conversation SET status=1 WHERE id=${data}`;
+    connection.query(sql, function (err, result) {
+      if (err) throw err;
+    });
+
+    // const messagesSql = `SELECT * FROM crm_conversation WHERE receiver_id=${req?.params?.user_id}`;
+    // connection.query(messagesSql, function (err, result) {
+    //   if (err) throw err;
+    //   socket.to(data.room).emit("messages", result);
+    // });
   });
 
   socket.on("disconnect", () => {
@@ -92,49 +107,13 @@ app.post("/message/uploadfile", upload.array("files"), (req, res) => {
 });
 
 app.get("/messages/:user_id", (req, res) => {
-  console.log(req?.params?.user_id);
-
-  const allSendersSql = `SELECT sender_id FROM crm_conversation WHERE receiver_id=${req?.params?.user_id}`;
   const allMessagesSql = `SELECT * FROM crm_conversation WHERE receiver_id=${req?.params?.user_id}`;
-
-  const messages = [];
-
-  // const groupByCategory = allMessagesSql.reduce((group, allSendersSql) => {
-  //   const { sender_id } = allSendersSql;
-  //   group[sender_id] = group[sender_id] ?? [];
-  //   group[sender_id].push(allSendersSql);
-  //   console.log(group);
-  //   return group;
-  // }, {});
-
-  console.log(allMessagesSql);
-
-  connection.query(allMessagesSql, function (err, result) {
-    if (err) console.log(err);
-    if (result?.length > 0) {
-      result.forEach((element) => {
-        messages.push(element);
-      });
-
-      console.log(messages);
-      res.json(result);
-    } else {
-      res.json("No conversation Yet");
-    }
-  });
+  const allSendersSql = `SELECT * FROM crm_conversation WHERE receiver_id=${req?.params?.user_id} GROUP BY sender_id`;
 
   connection.query(allSendersSql, function (err, result) {
     if (err) console.log(err);
-    if (result?.length > 0) {
-      result.forEach((element) => {
-        messages.push(element);
-      });
-
-      console.log(messages);
-      res.json(result);
-    } else {
-      res.json("No conversation Yet");
-    }
+    console.log(result);
+    res.json(result);
   });
 });
 
