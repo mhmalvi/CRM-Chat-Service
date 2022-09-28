@@ -72,12 +72,19 @@ io.on("connection", (socket) => {
   socket.on("delete_message", (msgId) => {
     console.log(msgId);
     // const deleteMessageSql = `DELETE FROM crm_conversation WHERE id=${msgId}`;
-    const deleteMessageSql = `UPDATE crm_conversation SET message="msg_dlt_by_user" WHERE id=${msgId}`;
+    // const deleteMessageSql = `UPDATE crm_conversation SET message="msg_dlt_by_user" WHERE id=${msgId}`;
+    const deleteMessageSql = `UPDATE crm_conversation SET delete_message=1 WHERE id=${msgId}`;
     connection.query(deleteMessageSql, function (err, data) {
       if (err) throw err;
     });
 
-    // socket.emit("receive_message", data);
+    const sql = `SELECT * FROM crm_conversation WHERE id=${msgId}`;
+    connection.query(sql, function (err, data) {
+      if (err) throw err;
+      console.log(data);
+      socket.emit("updated_message", data);
+    });
+    // socket.emit("updated_message", "deleted");
   });
 
   // const messagesSql = `SELECT * FROM crm_conversation WHERE receiver_id=${req?.params?.user_id}`;
@@ -130,7 +137,8 @@ app.get("/messages/:user_id", (req, res) => {
 
 app.get("/delete-message/:id", (req, res) => {
   const msgId = parseInt(req.params.id);
-  const deleteMessageSql = `DELETE FROM crm_conversation WHERE id=${msgId}`;
+  // const deleteMessageSql = `DELETE FROM crm_conversation WHERE id=${msgId}`;
+  const deleteMessageSql = `UPDATE crm_conversation SET delete_message=1 WHERE id=${msgId}`;
   connection.query(deleteMessageSql, function (err, data) {
     if (err) throw err;
     res.json("Deleted");
