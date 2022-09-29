@@ -125,10 +125,10 @@ app.post("/message/uploadfile", upload.array("files"), (req, res) => {
 });
 
 app.get("/messages/:user_id", (req, res) => {
-  const allMessagesSql = `SELECT * FROM crm_conversation WHERE receiver_id=${req?.params?.user_id}`;
-  const allSendersSql = `SELECT * FROM crm_conversation WHERE receiver_id=${req?.params?.user_id} GROUP BY sender_id`;
+  const allMessagesSql = `SELECT * FROM crm_conversation WHERE receiver_id=${req?.params?.user_id} OR sender_id=${req?.params?.user_id}  ORDER BY id DESC`;
+  // const allSendersSql = `SELECT * FROM crm_conversation WHERE receiver_id=${req?.params?.user_id} GROUP BY sender_id`;
 
-  connection.query(allSendersSql, function (err, result) {
+  connection.query(allMessagesSql, function (err, result) {
     if (err) console.log(err);
     console.log(result);
     res.json(result);
