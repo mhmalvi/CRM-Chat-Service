@@ -98,14 +98,18 @@ io.on("connection", (socket) => {
   });
 });
 
-app.get("/get-message/:id", (req, res) => {
-  const roomId = parseInt(req.params.id);
+// For retriving user_id wise messages
+
+app.get("/get-message/:room_id", (req, res) => {
+  const roomId = parseInt(req.params.room_id);
   const sql = `SELECT * FROM crm_conversation WHERE room=${roomId} ORDER BY id ASC`;
   connection.query(sql, function (err, data) {
     if (err) throw err;
     res.json(data);
   });
 });
+
+// For uploading files in message
 
 app.post("/message/uploadfile", upload.array("files"), (req, res) => {
   const files = req.files;
@@ -124,9 +128,10 @@ app.post("/message/uploadfile", upload.array("files"), (req, res) => {
   }
 });
 
+// For retriving user_id wise messages
+
 app.get("/messages/:user_id", (req, res) => {
-  const allMessagesSql = `SELECT * FROM crm_conversation WHERE receiver_id=${req?.params?.user_id} OR sender_id=${req?.params?.user_id}  ORDER BY id DESC`;
-  // const allSendersSql = `SELECT * FROM crm_conversation WHERE receiver_id=${req?.params?.user_id} GROUP BY sender_id`;
+  const allMessagesSql = `SELECT * FROM crm_conversation WHERE receiver_id=${req?.params?.user_id} AND delete_message=0 ORDER BY id DESC`;
 
   connection.query(allMessagesSql, function (err, result) {
     if (err) console.log(err);
@@ -134,6 +139,8 @@ app.get("/messages/:user_id", (req, res) => {
     res.json(result);
   });
 });
+
+// For deleting specific message
 
 app.get("/delete-message/:id", (req, res) => {
   const msgId = parseInt(req.params.id);
