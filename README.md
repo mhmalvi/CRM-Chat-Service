@@ -1,6 +1,8 @@
 <!-- repo-card -->
 ![CRM-Chat-Service](docs/assets/social-card.png)
 
+![CRM-Chat-Service — architecture](docs/assets/architecture.png)
+
 # CRM Chat Service
 
 A real-time chat microservice within the CRM ecosystem that enables direct messaging between CRM users. Built with Socket.IO and MySQL, this service powers internal team communication with support for text messages, file sharing, read receipts, and message management.
